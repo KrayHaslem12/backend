@@ -37,35 +37,75 @@ def add_user():
      return jsonify('Error: User not created.'), 400
 
 @app.route('/user/edit/<user_id>', methods=['POST'])
-def edit_user(user_id):
+def edit_user(user_id, first_name = None, last_name = None, email = None, password = None, city = None, state = None, active = None):
    form = request.form
-   first_name = form.get('first_name')
-   last_name = form.get('last_name')
-   email = form.get('email')
-   password = form.get('password')
-   city = form.get('city')
-   state = form.get('state')
-   active = form.get('active')
-   hashed_pw = generate_password_hash(password)
    cursor.execute('SELECT user_id FROM users')
    id_list_tup = cursor.fetchall()
+   try:
+      cursor.execute('SELECT user_id, first_name, last_name, email, password, city, state, active FROM users WHERE user_id = %s',(user_id))
+      result = cursor.fetchone()
+   except:
+      return jsonify("Error: User not found."), 404
+
    id_list = []
+   fields_list = []
+   values = []
+
    if id_list_tup == []:
       return jsonify('Error: No users in db.'), 404
+   
    for i in id_list_tup:
       id_list.append(i[0])
-   if first_name == '':
-      return jsonify('Missing required field first_name') , 400
-   if email == '':
-      return jsonify('Missing required field email') , 400
-   if password == '':
-      return jsonify('Missing required field password') , 400
-   if active == None:
-      active = True
+ 
+   if result:
+      first_name = form.get('first_name')
+      last_name = form.get('last_name')
+      email = form.get('email')
+      city = form.get('city')
+      state = form.get('state')
+      active = form.get('active')
+      password = form.get('password')
+      
+      
+      if first_name != None:
+         fields_list.append('first_name = %s')
+         values.append(first_name)
+      
+      if last_name != None:
+         fields_list.append('last_name = %s')
+         values.append(last_name)
+
+      if email != None:
+         fields_list.append('email = %s')
+         values.append(email)
+
+      if password != None:
+         hashed_pw = generate_password_hash(password)
+         fields_list.append('password = %s')
+         values.append(hashed_pw)
+      
+      if city != None:
+         fields_list.append('city = %s')
+         values.append(city)
+   
+      if state != None:
+         fields_list.append('state = %s')
+         values.append(state)
+                
+      if active != None:
+         fields_list.append('active = %s')
+         values.append(active)
+      values.append(user_id)
+   else:
+      return jsonify("Error: No results."), 404 
+   fields = " , ".join(fields_list)
+   # fields = "first_name = %s, last_name = %s, email = %s, password = %s, city = %s, state = %s, active = %s"
+   query = f'UPDATE users SET {fields} WHERE user_id = %s'
    try:
       if int(user_id) not in id_list:
          return jsonify('Error: user_id out of range.'),404
-      cursor.execute('UPDATE users SET first_name = %s, last_name = %s, email = %s, password = %s, city = %s, state = %s, active = %s WHERE user_id = %s', (first_name, last_name, email, hashed_pw, city, state, active, user_id))
+      # print(query,values,type(query),type(values))
+      cursor.execute(query,values)
       conn.commit()
       return jsonify('User Updated'), 201
    except:
@@ -118,8 +158,8 @@ def get_users():
    list_users = []
    cursor.execute('SELECT user_id, first_name, last_name, email, password, city, state, active FROM users')
    fields = ['user_id', 'first_name', 'last_name', 'email', 'password', 'city', 'state', 'active']
-   user_things = cursor.fetchall()
-   for user_list in user_things:
+   user_list_tuples = cursor.fetchall()
+   for user_list in user_list_tuples:
       user_dict = {} 
       for key,value in enumerate(user_list):
          user_dict[fields[key]] = value
