@@ -1,6 +1,6 @@
-import json
-from flask import request, Flask, jsonify, Response
+from flask import request, Flask, jsonify
 from flask_bcrypt import generate_password_hash
+
 
 import psycopg2
 
@@ -96,15 +96,15 @@ def edit_user(user_id, first_name = None, last_name = None, email = None, passwo
          fields_list.append('active = %s')
          values.append(active)
       values.append(user_id)
+
    else:
       return jsonify("Error: No results."), 404 
    fields = " , ".join(fields_list)
-   # fields = "first_name = %s, last_name = %s, email = %s, password = %s, city = %s, state = %s, active = %s"
    query = f'UPDATE users SET {fields} WHERE user_id = %s'
+  
    try:
       if int(user_id) not in id_list:
          return jsonify('Error: user_id out of range.'),404
-      # print(query,values,type(query),type(values))
       cursor.execute(query,values)
       conn.commit()
       return jsonify('User Updated'), 201
