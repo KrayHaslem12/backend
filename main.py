@@ -329,27 +329,64 @@ def get_user(user_id):
    FROM Users u
    JOIN Organizations o
    ON o.org_id = u.org_id
-   WHERE u.user_id = %s""", (user_id,))
-         user_list = cursor.fetchone()
+   WHERE u.user_id = %s
+   """, (user_id,))
+         organization_list = cursor.fetchone()
          user_dict = {
-         "user_id": user_list[0],
-         "first_name": user_list[1],
-         "last_name": user_list[2],
-         "email": user_list[3],
-         "phone": user_list[4],
-         "city": user_list[5],
-         "state": user_list[6],
-         "active": user_list[8],
+         "user_id": organization_list[0],
+         "first_name": organization_list[1],
+         "last_name": organization_list[2],
+         "email": organization_list[3],
+         "phone": organization_list[4],
+         "city": organization_list[5],
+         "state": organization_list[6],
+         "active": organization_list[8],
          "organization": {
-            "org_id": user_list[9],
-            "name": user_list[10],
-            "phone": user_list[11],
-            "city": user_list[12],
-            "state": user_list[13],
-            "active": user_list[14]
+            "org_id": organization_list[9],
+            "name": organization_list[10],
+            "phone": organization_list[11],
+            "city": organization_list[12],
+            "state": organization_list[13],
+            "active": organization_list[14]
          }
 
       } 
+         return jsonify(user_dict), 200
+   except:
+      return jsonify('Error: Failed to get User.'), 400
+
+@app.route('/organization/<org_id>', methods = ['GET'])
+def get_organization(org_id):
+   cursor.execute('SELECT org_id FROM organizations')
+   id_list_tup = cursor.fetchall()
+   id_list = []
+   if id_list_tup == []:
+      return jsonify('Error: No organizations in db.'), 404
+   for i in id_list_tup:
+      id_list.append(i[0])
+   try:
+      if int(org_id) not in id_list:
+         return jsonify('Error: org_id out of range.'),404
+      else:
+         cursor.execute("""
+            SELECT 
+               org_id, name, phone, city, state, active 
+            FROM 
+               organizations
+            WHERE 
+               org_id=%s;
+            """, (org_id,))
+        
+         organization_list = cursor.fetchone()
+         user_dict = {
+         "org_id": organization_list[0],
+         "name": organization_list[1],
+         "phone": organization_list[2],
+         "city": organization_list[3],
+         "state": organization_list[4],
+         "active": organization_list[5]
+         }
+       
          return jsonify(user_dict), 200
    except:
       return jsonify('Error: Failed to get User.'), 400
@@ -367,24 +404,24 @@ def get_users():
    ON o.org_id = u.org_id;
    """)
 
-   user_list_tuples = cursor.fetchall()
-   for user_list in user_list_tuples:
+   org_list_tuples = cursor.fetchall()
+   for organization_list in org_list_tuples:
       user_dict = {
-         "user_id": user_list[0],
-         "first_name": user_list[1],
-         "last_name": user_list[2],
-         "email": user_list[3],
-         "phone": user_list[4],
-         "city": user_list[5],
-         "state": user_list[6],
-         "active": user_list[8],
+         "user_id": organization_list[0],
+         "first_name": organization_list[1],
+         "last_name": organization_list[2],
+         "email": organization_list[3],
+         "phone": organization_list[4],
+         "city": organization_list[5],
+         "state": organization_list[6],
+         "active": organization_list[8],
          "organization": {
-            "org_id": user_list[9],
-            "name": user_list[10],
-            "phone": user_list[11],
-            "city": user_list[12],
-            "state": user_list[13],
-            "active": user_list[14]
+            "org_id": organization_list[9],
+            "name": organization_list[10],
+            "phone": organization_list[11],
+            "city": organization_list[12],
+            "state": organization_list[13],
+            "active": organization_list[14]
          }
 
       } 
@@ -393,11 +430,60 @@ def get_users():
 
    return jsonify(list_users), 200
 
+@app.route('/organizations/list', methods=['GET'])
+def get_organizations():
+   list_organizations = []
+   cursor.execute("""
+   SELECT 
+      org_id, name, phone, city, state, active 
+   FROM 
+      organizations;
+   """)
+
+   org_list_tuples = cursor.fetchall()
+   for organization_list in org_list_tuples:
+      org_dict = {
+         "org_id": organization_list[0],
+         "name": organization_list[1],
+         "phone": organization_list[2],
+         "city": organization_list[3],
+         "state": organization_list[4],
+         "active": organization_list[5]
+         }
+
+      list_organizations.append(org_dict)
+
+   return jsonify(list_organizations), 200
+
 @app.route('/user/search/<search_term>', methods=['GET'])
 def search_users(search_term):
    search_list = []
    search_term = search_term.lower()
-   cursor.execute('SELECT user_id, first_name, last_name, email, phone, city, state, org_id, active FROM users WHERE LOWER(first_name) LIKE %s OR LOWER(last_name) LIKE %s OR LOWER(email) LIKE %s OR LOWER(city) LIKE %s or LOWER(state) LIKE %s', (f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%'))
+   cursor.execute("""
+   SELECT 
+      user_id, first_name, last_name, email, phone, city, state, org_id, active 
+   FROM 
+      users 
+   WHERE 
+      LOWER(first_name) LIKE %s OR LOWER(last_name) LIKE %s OR LOWER(email) LIKE %s OR LOWER(city) LIKE %s or LOWER(state) LIKE %s', (f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%')
+   """)
+   search_items = cursor.fetchall()
+   for i in search_items:
+      search_list.append(i)
+   return jsonify({ 'results': search_list })
+
+@app.route('/organization/search/<search_term>', methods=['GET'])
+def search_organization(search_term):
+   search_list = []
+   search_term = search_term.lower()
+   cursor.execute("""
+   SELECT 
+      org_id, name, phone, city, state, active 
+   FROM 
+      organizations 
+   WHERE 
+      LOWER(name) LIKE %s OR LOWER(city) LIKE %s or LOWER(state) LIKE %s', (f'%{search_term}%',f'%{search_term}%',f'%{search_term}%')
+   """)
    search_items = cursor.fetchall()
    for i in search_items:
       search_list.append(i)
