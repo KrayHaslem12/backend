@@ -11,15 +11,15 @@ org_id = -1
 
 def create_all():
   cursor.execute("""
-  CREATE TABLE IF NOT EXISTS Organizations (
-    org_id SERIAL PRIMARY KEY,
-    name VARCHAR NOT NULL, 
-    phone VARCHAR,
-    city VARCHAR,
-    state VARCHAR,
-    active smallint
-   );
-  """)
+   CREATE TABLE IF NOT EXISTS Organizations (
+      org_id SERIAL PRIMARY KEY,
+      name VARCHAR NOT NULL, 
+      phone VARCHAR,
+      city VARCHAR,
+      state VARCHAR,
+      active SMALLINT
+      );
+   """)
   conn.commit()
   
   cursor.execute("SELECT org_id, name FROM Organizations WHERE name='DevPipeline';")
@@ -49,8 +49,8 @@ def create_all():
     phone VARCHAR,
     city VARCHAR,
     state VARCHAR,
-    org_id int,
-    active smallint
+    org_id INT,
+    active SMALLINT
    );
   """)
 
@@ -260,11 +260,9 @@ def edit_organization(org_id, name = None, phone = None, city = None, state = No
    query = f'UPDATE Organizations SET {fields} WHERE org_id = %s'
   
    try:
-      print(org_id,type(org_id),id_list,type(id_list))
       if int(org_id) not in id_list:
          return jsonify(' Error: org_id out of range.'),404
       cursor.execute(query,values)
-      print(query, values, type(query), type(values))
       conn.commit() 
       return jsonify('Organization Updated'), 201
    except: 
@@ -460,16 +458,31 @@ def search_users(search_term):
    search_list = []
    search_term = search_term.lower()
    cursor.execute("""
-   SELECT 
-      user_id, first_name, last_name, email, phone, city, state, org_id, active 
-   FROM 
-      users 
-   WHERE 
-      LOWER(first_name) LIKE %s OR LOWER(last_name) LIKE %s OR LOWER(email) LIKE %s OR LOWER(city) LIKE %s or LOWER(state) LIKE %s', (f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%')
-   """)
+      SELECT 
+         user_id, first_name, last_name, email, phone, city, state, active 
+      FROM 
+         users 
+      WHERE 
+         LOWER(first_name) LIKE %s OR
+          LOWER(last_name) LIKE %s OR 
+          LOWER(email) LIKE %s OR 
+          LOWER(city) LIKE %s OR 
+          LOWER(state) LIKE %s
+          """, (f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%',f'%{search_term}%'))
    search_items = cursor.fetchall()
-   for i in search_items:
-      search_list.append(i)
+
+   for user in search_items:
+      userObjBuild = {
+         "user_id":user[0],
+         "first_name":user[1],
+         "last_name":user[2],
+         "email":user[3],
+         "phone":user[4],
+         "city":user[5],
+         "state":user[6],
+         "active":user[7]
+      }
+      search_list.append(userObjBuild)
    return jsonify({ 'results': search_list })
 
 @app.route('/organization/search/<search_term>', methods=['GET'])
