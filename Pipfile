@@ -10,6 +10,7 @@ flask-bcrypt = "*"
 flask-sqlalchemy = "*"
 flask-marshmallow = "*"
 marshmallow-sqlalchemy = "*"
+marshmallow = "*"
 
 [dev-packages]
 
