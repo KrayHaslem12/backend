@@ -90,7 +90,7 @@ def create_all():
    else:
       print("DevPipeline Organization found!")
 
-      print("Querying for Super Admin user...")
+   print("Querying for Super Admin user...")
    
    user_data = db.session.query(AppUsers).filter(AppUsers.email == 'admin@devpipeline.com').first()
    
