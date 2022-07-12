@@ -69,7 +69,6 @@ class AppUsersSchema(ma.Schema):
    class Meta:
       fields = ['user_id','first_name', 'last_name', 'email', 'city', 'state', 'active', 'org_id', 'created_date', 'role', 'organization']
    
-   print(type(ma.fields))
    organization = ma.fields.Nested(OrganizationsSchema(only=("name","active")))
     
 user_schema = AppUsersSchema()
@@ -100,7 +99,6 @@ def create_all():
       password = ''
       while password == '' or password is None:
          password = input(' Enter a password for Super Admin:')
-      # hashed_password = bcrypt.generate_password_hash(password).decode("utf8")
 
       record = AppUsers('Super', 'Admin', "admin@devpipeline.com", password, "Utah", "Orem", org_id, "super-admin")
 
